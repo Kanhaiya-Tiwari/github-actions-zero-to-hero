@@ -1,0 +1,55 @@
+name: 🚀 Deploy to GitHub Pages
+
+on:
+    push:
+        branches:
+            - Kanha
+    workflow_dispatch:
+
+# Grant GITHUB_TOKEN the permissions to deploy to Pages
+permissions:
+    contents: write
+    pages: write
+    id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+    group: "pages"
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        name: Build & Deploy to GitHub Pages
+        runs-on: ubuntu-latest
+
+        steps:
+            # ── Step 1: Checkout the Kanha branch ──────────────────────────────────
+            - name: 📥 Checkout Repository
+              uses: actions/checkout@v4
+              with:
+                  ref: Kanha
+
+            # ── Step 2: Prepare static site from Flask template ───────────────────
+            - name: 📁 Prepare Static Site Files
+              run: |
+                  mkdir -p ./site
+                  # Copy index.html from Flask templates to site root
+                  cp templates/index.html ./site/index.html
+                  # Copy CNAME for custom domain support
+                  if [ -f CNAME ]; then
+                    cp CNAME ./site/CNAME
+                    echo "✅ CNAME copied: $(cat CNAME)"
+                  fi
+                  echo "📂 Site directory contents:"
+                  ls -la ./site/
+
+            # ── Step 3: Deploy to GitHub Pages (gh-pages branch) ──────────────────
+            - name: 🌐 Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./site
+                  publish_branch: gh-pages
+                  user_name: "github-actions[bot]"
+                  user_email: "github-actions[bot]@users.noreply.github.com"
+                  commit_message: "🚀 Deploy: ${{ github.sha }} from Kanha branch"
