@@ -1,27 +1,30 @@
 name: Deploy Flask App
 
 on:
-    workflow_run:
-        workflows: ["Docker Build & Push "] # Name of the upstream workflow
-        types: [completed]
-        branches:
-            - main
-    
+  workflow_run:
+    workflows: ["Docker Build & Push"] # Must match the upstream workflow name EXACTLY
+    types: [completed]
+    branches:
+      - main
+
 jobs:
-        
-    deploy:
-        env:
-            DOCKERHUB_USER : ${{ vars.DOCKERHUB_USER }}
-            DOCKER_TAG: ${{ github.sha}}
+  deploy:
+    # Only deploy when the upstream Docker Build & Push workflow SUCCEEDED
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    env:
+      DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
+      DOCKER_TAG: ${{ github.sha}}
 
-        runs-on: self-hosted
+    runs-on: self-hosted
 
-        steps:
-            - name: checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up Docker Compose (optional, usually pre-installed on ubuntu-latest runners)
-              uses: docker/setup-compose-action@v2 
+      - name: Set up Docker Compose (optional, usually pre-installed on ubuntu-latest runners)
+        uses: docker/setup-compose-action@v2
 
-            - name: deploy with docker compose
-              run: docker compose down && docker compose up -d --build --force-recreate --pull always
+      - name: deploy with docker compose
+        # --pull always  → pull the latest image from Docker Hub
+        # NO --build     → do NOT rebuild from Dockerfile locally
+        run: docker compose down && docker compose up -d --force-recreate --pull always
