@@ -3,48 +3,97 @@ name: 🚀 Deploy to GitHub Pages
 on:
     push:
         branches:
-            - Kanha
-    workflow_dispatch:
+            - Kanha # Deploy on every push to Kanha branch
+    workflow_dispatch: # Allow manual trigger from GitHub Actions tab
 
-# Grant GITHUB_TOKEN the permissions to deploy to Pages
+# Give GITHUB_TOKEN the permissions required to deploy to Pages
 permissions:
     contents: write
     pages: write
     id-token: write
 
-# Allow only one concurrent deployment
+# Only one deployment at a time; cancel any in-progress run
 concurrency:
-    group: "pages"
-    cancel-in-progress: false
+    group: "pages-deploy"
+    cancel-in-progress: true
 
 jobs:
-    deploy:
-        name: Build & Deploy to GitHub Pages
+    # ─────────────────────────────────────────────────────────────────────────
+    # JOB 1 ── Lint Python code (CI check before deploying)
+    # ─────────────────────────────────────────────────────────────────────────
+    lint:
+        name: 🐍 Python Lint Check
         runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12"]
+        steps:
+            - name: 📥 Checkout Code
+              uses: actions/checkout@v4
+
+            - name: 🐍 Setup Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v5
+              with:
+                  python-version: ${{ matrix.python-version }}
+
+            - name: 📦 Install Dependencies
+              run: pip install -r requirements.txt flake8
+
+            - name: 🔍 Run Linter
+              run: flake8 app.py --max-line-length=120
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # JOB 2 ── Build & Deploy static site to GitHub Pages
+    # ─────────────────────────────────────────────────────────────────────────
+    deploy:
+        name: 🌐 Deploy to GitHub Pages
+        runs-on: ubuntu-latest
+        needs: lint # Only deploy if lint passes
 
         steps:
-            # ── Step 1: Checkout the Kanha branch ──────────────────────────────────
+            # ── 1. Checkout ────────────────────────────────────────────────────────
             - name: 📥 Checkout Repository
               uses: actions/checkout@v4
               with:
                   ref: Kanha
 
-            # ── Step 2: Prepare static site from Flask template ───────────────────
-            - name: 📁 Prepare Static Site Files
+            # ── 2. Prepare static site directory ──────────────────────────────────
+            - name: 📁 Prepare Static Site
               run: |
                   mkdir -p ./site
-                  # Copy index.html from Flask templates to site root
+
+                  # Copy the main HTML page from Flask templates → site root
                   cp templates/index.html ./site/index.html
-                  # Copy CNAME for custom domain support
+
+                  # Copy CNAME for custom domain (portfolio.BuildWithKanha.shop)
                   if [ -f CNAME ]; then
                     cp CNAME ./site/CNAME
-                    echo "✅ CNAME copied: $(cat CNAME)"
+                    echo "✅ Custom domain: $(cat CNAME)"
                   fi
-                  echo "📂 Site directory contents:"
+
+                  # Copy README so visitors can read project details
+                  if [ -f README.md ]; then
+                    cp README.md ./site/README.md
+                  fi
+
+                  echo ""
+                  echo "📂 Site contents ready to deploy:"
                   ls -la ./site/
 
-            # ── Step 3: Deploy to GitHub Pages (gh-pages branch) ──────────────────
-            - name: 🌐 Deploy to GitHub Pages
+            # ── 3. Show deployment info ────────────────────────────────────────────
+            - name: 📋 Deployment Info
+              run: |
+                  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                  echo "  📦 Repo    : ${{ github.repository }}"
+                  echo "  🌿 Branch  : ${{ github.ref_name }}"
+                  echo "  🔖 Commit  : ${{ github.sha }}"
+                  echo "  👤 Actor   : ${{ github.actor }}"
+                  echo "  🕑 Time    : $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+                  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            # ── 4. Deploy to gh-pages branch ──────────────────────────────────────
+            - name: 🚀 Push to gh-pages Branch
               uses: peaceiris/actions-gh-pages@v4
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -52,4 +101,10 @@ jobs:
                   publish_branch: gh-pages
                   user_name: "github-actions[bot]"
                   user_email: "github-actions[bot]@users.noreply.github.com"
-                  commit_message: "🚀 Deploy: ${{ github.sha }} from Kanha branch"
+                  commit_message: "🚀 deploy: ${{ github.sha }} — auto deployed from Kanha branch"
+                  full_commit_message: |
+                      🚀 Deployed from Kanha branch
+
+                      Commit : ${{ github.sha }}
+                      Actor  : ${{ github.actor }}
+                      Time   : $(date -u '+%Y-%m-%d %H:%M UTC')
