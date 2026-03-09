@@ -13,7 +13,7 @@ jobs:
             uses: actions/checkout@v4
 
           - name: pip dependencies audit
-            uses: pypa/gh-action-pip-audit@v1.0.0
+            uses: pypa/gh-action-pip-audit@v1.1.0
             with:
         # Optional: specify a requirements file if not using a virtual environment
               requirements: requirements.txt 
