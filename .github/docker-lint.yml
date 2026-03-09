@@ -1,0 +1,10 @@
+#scan the Dockerfile for issues & CVEs
+name: Docker Lint 
+
+on:
+  workflow_call:
+
+jobs:
+   validate:
+    runs-on: ubuntu-latest
+    
