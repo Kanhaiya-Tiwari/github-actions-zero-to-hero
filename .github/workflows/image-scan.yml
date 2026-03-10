@@ -17,8 +17,8 @@ jobs:
           - name: Run Trivy scanner
             uses: aquasecurity/trivy-action@master 
             with:
-                severity: 'CRITICAL'
-                exit-code: '1'     
+                severity: CRITICAL
+                exit-code: 1     
 
          
   
