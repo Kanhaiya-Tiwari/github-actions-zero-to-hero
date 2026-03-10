@@ -1,8 +1,14 @@
 name: Deploy Flask App
 
 on:
-  workflow_dispatch:
-    
+  workflow_run:
+    workflows:
+      - "Docker Build & Push"
+    branches:
+      - secure
+    types:
+      - completed
+
 jobs:
   deploy:
     # Only deploy when the upstream Docker Build & Push workflow SUCCEEDED

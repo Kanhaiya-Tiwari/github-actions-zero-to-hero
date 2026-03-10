@@ -1,0 +1,20 @@
+# this  will deploy the safe /secure /tested to prod server
+name: Deploy to server
+
+on:
+    workflow_call:
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: SSH to prod server
+              uses: appleboy/ssh-action@v1.0.3 # Use the latest version
+              with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SH_PRIVATE_KEY }}
+                script: |
+                  echo "starting Deployment"
+                  mkdir devops
+               
