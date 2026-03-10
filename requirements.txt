@@ -1,3 +1,7 @@
-flake8
+# App runtime dependencies
 flask
+gunicorn
+
+# CI / code quality tools (used by GitHub Actions)
+flake8
 bandit
