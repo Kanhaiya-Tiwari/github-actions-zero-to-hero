@@ -19,7 +19,7 @@ jobs:
               uses: appleboy/ssh-action@v1.0.3
               with:
                 host: ${{ secrets.SSH_HOST }}
-                username: ${{ secrets.SSH_USER }}
+                username: ${{ secrets.SSH_USERNAME }}
                 key: ${{ secrets.SH_PRIVATE_KEY }}
                 script: |
                  echo "Installing required packages & folders"
@@ -31,7 +31,7 @@ jobs:
               uses: appleboy/scp-action@v1
               with:
                 host: ${{ secrets.SSH_HOST }}
-                username: ${{ secrets.SSH_USER }}
+                username: ${{ secrets.SSH_USERNAME }}
                 key: ${{ secrets.SH_PRIVATE_KEY }}
                 source: docker-compose.yml
                 target: ~/devops
@@ -40,8 +40,8 @@ jobs:
               uses: appleboy/ssh-action@v1.0.3
               with:
                 host: ${{ secrets.SH_HOST }}
-                username: ${{ secrets.SSH_USER }}
-                key: ${{ secrets.SSH_PRIVATE_KEY }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SH_PRIVATE_KEY }}
                 script: |
                  echo "Running App"
                 
