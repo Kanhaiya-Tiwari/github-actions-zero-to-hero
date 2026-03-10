@@ -16,8 +16,6 @@ jobs:
 
       secrets-scan:
             uses: ./.github/workflows/secrets-scan.yml
-            needs: code-quality
 
       dependency-scan:
             uses: ./.github/workflows/dependency-scan.yml
-            needs: secrets-scan
