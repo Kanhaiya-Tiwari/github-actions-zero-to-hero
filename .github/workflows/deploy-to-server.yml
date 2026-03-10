@@ -1,4 +1,4 @@
-# This workflow deploys the safe/secure/tested app to the production server
+# This workflow deploys the safe/secure/tested app to the production server via SSH
 name: Deploy to server
 
 on:
@@ -17,7 +17,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.yml"
           target: "~/devops/"
 
@@ -27,7 +27,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "=== Starting Deployment ==="
             mkdir -p ~/devops
@@ -45,10 +45,7 @@ jobs:
               sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
               # Add Docker repo
-              echo \
-                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-                https://download.docker.com/linux/ubuntu \
-                $(lsb_release -cs) stable" \
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
                 | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
               sudo apt-get update -y
@@ -74,20 +71,25 @@ jobs:
               && echo "Docker service is running ✅" \
               || echo "Docker service FAILED to start ❌"
 
-            # ── Add runner user to docker group ───────────────────────────────
+            # ── Add current user to docker group ──────────────────────────────
             sudo usermod -aG docker $USER || true
 
             # ── Write .env file for Docker Compose ────────────────────────────
-            echo "DOCKERHUB_USER=${{ secrets.DOCKERHUB_USERNAME }}" > ~/devops/.env
-            echo "DOCKER_TAG=${{ github.sha }}"                     >> ~/devops/.env
-            echo "─── .env contents (image details) ───"
+            # (sudo -E drops env vars, so we persist them via .env file)
+            cat > ~/devops/.env <<EOF
+            DOCKERHUB_USER=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKER_TAG=${{ github.sha }}
+            EOF
+            echo "─── .env contents ───"
             cat ~/devops/.env
 
             # ── Deploy with Docker Compose ────────────────────────────────────
             cd ~/devops
             echo "Pulling image: ${{ secrets.DOCKERHUB_USERNAME }}/github-actions-app:${{ github.sha }}"
-            sudo -E docker compose down
-            sudo -E docker compose up -d --force-recreate --pull always
+            sudo -E docker compose pull
+            sudo -E docker compose down --remove-orphans
+            sudo -E docker compose up -d --force-recreate
             echo ""
             echo "=== Running containers ==="
             sudo docker ps
+            echo "=== Deployment complete ✅ ==="
