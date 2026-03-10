@@ -16,6 +16,6 @@ def health():
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
-    host = os.environ.get('FLASK_HOST', '0.0.0.0')
+    host = os.environ.get('FLASK_HOST', '0.0.0.0')  # nosec B104 - intentional, required for Docker; network security handled at firewall level
     port = int(os.environ.get('FLASK_PORT', '80'))
     app.run(debug=debug_mode, host=host, port=port)
